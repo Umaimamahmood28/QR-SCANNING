@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code </title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <center><h1 style="color: blue;">QR Code Generator/Scanner App</h1></center>
+    <br><br><br>
+    <div class="container">
+        <div id="gen" style="margin-left: 10%;">
+            <input type="text" id="qr-text" placeholder="Enter text or URL">
+            <button id="gen-btn" style="margin-left: 15px;">Generate QR Code</button>
+            <div id="qr-code"></div>
+        </div>
+        <div id="scanner">
+            <!-- <h2 style="margin-right: 60%;margin-top: 20%; width: 70%;">QR Code Scanner</h2> -->
+            <video id="qr-video" autoplay playsinline></video>
+            <canvas id="qr-canvas"></canvas>
+        </div>
+    </div>
+    <script src="app.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+<script >
+const genBtn = document.getElementById("gen-btn");
+const qrText = document.getElementById("qr-text");
+const qrCodeDiv = document.getElementById("qr-code");
+
+genBtn.addEventListener("click", generateQRCode);
+
+function generateQRCode() {
+    const text = qrText.value;
+    if (text.trim() !== "") {
+        qrCodeDiv.innerHTML = "";
+        const qrCode = new QRCode(qrCodeDiv, {
+            text: text,
+            width: 228,
+            height: 228,
+        });
+    }
+}
+
+// QR Code Scanner
+const scannerSection = document.getElementById("scanner");
+const qrVideo = document.getElementById("qr-video");
+const qrCanvas = document.getElementById("qr-canvas");
+const qrCanvasContext = qrCanvas.getContext("2d");
+
+function startScanner() {
+    scannerSection.style.display = "block";
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function (stream) {
+            qrVideo.srcObject = stream;
+            qrVideo.play();
+            requestAnimationFrame(scan);
+        })
+        .catch(function (error) {
+            console.error("Error accessing camera:", error);
+        });
+}
+
+function scan() {
+    if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
+        qrCanvas.width = qrVideo.videoWidth;
+        qrCanvas.height = qrVideo.videoHeight;
+        qrCanvasContext.drawImage(qrVideo, 0, 0, qrCanvas.width, qrCanvas.height);
+
+        const imageData = qrCanvasContext.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+            alert("QR Code Scanned: " + code.data);
+        }
+
+        requestAnimationFrame(scan);
+    } else {
+        requestAnimationFrame(scan);
+    }
+}
+
+// Initialize the scanner
+startScanner();
+</script>
+
+</body>
+</html>
